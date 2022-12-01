@@ -2,11 +2,21 @@ import os
 import logging
 
 from dotenv import load_dotenv
+
+from telegram import ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
+quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой счет"]]
+reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
+
 def echo(bot, update):
-    update.message.reply_text(update.message.text)
+    chat_id = update.message.from_user.id
+    bot.send_message(
+        chat_id=chat_id,
+        text=update.message.text,
+        reply_markup=reply_markup
+    )
 
 
 def main():
