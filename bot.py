@@ -19,7 +19,7 @@ def get_questions_and_answers_from_file(file_name):
     with open(
         os.path.join("./quiz-questions", file_name),
         encoding="KOI8-R"
-        ) as file:
+    ) as file:
         text = file.read()
         for text_peace in text.split("\n\n"):
             if text_peace.startswith("Вопрос"):
@@ -50,8 +50,24 @@ def send_new_question(bot, update, redis):
         )
         redis_set = redis.set(user_id, question)
         logger.info(redis_set)
-        redis_get = redis.get(user_id)
-        logger.info(redis_get)
+    redis_get = redis.get(user_id)
+    logger.info(redis_get)
+    answer = [
+        answer.strip(".").lower() for answer in quiz[redis_get].split("\n")
+    ]
+    logger.info(answer)
+    if update.message.text.lower() in answer:
+        bot.send_message(
+            chat_id=user_id,
+            text="Правильно! Поздравляю!",
+            reply_markup=reply_markup
+        )
+    if update.message.text.lower() not in answer and update.message.text.lower() != "новый вопрос":
+        bot.send_message(
+            chat_id=user_id,
+            text="Неправильно... Попробуешь еще раз?",
+            reply_markup=reply_markup
+        )
 
 
 def main():
