@@ -17,6 +17,7 @@ logger = logging.getLogger("quizbot")
 class Stage(IntEnum):
     QUESTION = 1
     ANSWER = 2
+    NO_ANSWER = 3
 
 quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой счет"]]
 reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
@@ -86,6 +87,26 @@ def handle_solution_attempt(bot, update, redis):
         return Stage.ANSWER
 
 
+def handle_surrender(bot, update, redis):
+    user_id = update.message.from_user.id
+    question = redis.get(user_id)
+    logger.info(question)
+    quiz = get_questions_and_answers_from_file("120br2.txt")
+    answer = quiz[question] 
+    bot.send_message(
+        chat_id=user_id,
+        text=answer,
+    )
+    question = random.choice(list(quiz.keys()))
+    bot.send_message(
+        chat_id=user_id,
+        text=question,
+    )
+    redis_set = redis.set(user_id, question)
+    logger.info(redis_set)
+    return Stage.ANSWER
+
+
 def main():
     load_dotenv()
     redis_db = redis.Redis(
@@ -100,12 +121,19 @@ def main():
         entry_points=[CommandHandler("start", start_quiz)],
 
         states={
-            Stage.QUESTION: [RegexHandler("^(Новый вопрос|Сдаться|Мой счет)$",
-                partial(handle_new_question_request, redis=redis_db))
+            Stage.QUESTION: [
+                RegexHandler("^(Новый вопрос)$",
+                    partial(handle_new_question_request, redis=redis_db))
             ],
-            Stage.ANSWER: [MessageHandler(Filters.text, 
-                partial(handle_solution_attempt, redis=redis_db))
+            Stage.ANSWER: [
+                RegexHandler("^(Сдаться)$",
+                    partial(handle_surrender, redis=redis_db)),
+                RegexHandler("^(Новый вопрос)$",
+                    partial(handle_new_question_request, redis=redis_db)),
+                MessageHandler(Filters.text, 
+                    partial(handle_solution_attempt, redis=redis_db)),
             ],
+
         },
         fallbacks=[]
     )
