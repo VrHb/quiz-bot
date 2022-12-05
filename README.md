@@ -58,11 +58,12 @@ pip install -r requirements.txt
 - Запускаем vk бота:
 
 ```
-python vk_bot.py
+python vk_bot.py --help
 ```
+Бот стартует по команде <Старт>
 
 - Запускаем telegram бота:
 
 ```
-python tg_bot.py
+python tg_bot.py --help
 ```
