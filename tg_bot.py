@@ -25,21 +25,6 @@ quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой сче�
 reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
 
 
-def get_questions_and_answers_from_file(file_name):
-    quiz = {}
-    with open(
-        os.path.join("./quiz-questions", file_name),
-        encoding="KOI8-R"
-    ) as file:
-        text = file.read()
-        for text_peace in text.split("\n\n"):
-            if text_peace.startswith("Вопрос"):
-                question = text_peace 
-            if text_peace.startswith("Ответ"):
-                quiz[question] = text_peace 
-    return quiz
-
-
 def start_quiz(bot, update):
     chat_id = update.message.from_user.id
     bot.send_message(
@@ -111,12 +96,12 @@ def main():
     parser = argparse.ArgumentParser(description="Бот для проведения викторины.")
     parser.add_argument(
         "--path",
-        default="./quiz_questions",
+        default="./quiz-questions",
         help="Путь к директории с квизами"
     )
     parser.add_argument(
         "--filename",
-        default="120bк2.txt",
+        default="120br2.txt",
         help="Имя файла"
     )
     args = parser.parse_args()

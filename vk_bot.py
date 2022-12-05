@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import logging
@@ -92,12 +93,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Бот для проведения викторины.")
     parser.add_argument(
         "--path",
-        default="./quiz_questions",
+        default="./quiz-questions",
         help="Путь к директории с квизами"
     )
     parser.add_argument(
         "--filename",
-        default="120bк2.txt",
+        default="120br2.txt",
         help="Имя файла"
     )
     args = parser.parse_args()
