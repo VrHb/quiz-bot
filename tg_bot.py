@@ -17,7 +17,6 @@ logger = logging.getLogger("quizbot")
 class Stage(IntEnum):
     QUESTION = 1
     ANSWER = 2
-    NO_ANSWER = 3
 
 quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой счет"]]
 reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
@@ -65,10 +64,10 @@ def handle_new_question_request(bot, update, redis):
 def handle_solution_attempt(bot, update, redis):
     quiz = get_questions_and_answers_from_file("120br2.txt")
     user_id = update.message.from_user.id
-    redis_get = redis.get(user_id)
-    logger.info(redis_get)
+    question = redis.get(user_id)
+    logger.info(question)
     answer = [
-        answer.strip(".").lower() for answer in quiz[redis_get].split("\n")
+        answer.strip(".").lower() for answer in quiz[question].split("\n")
     ]
     logger.info(answer)
     if update.message.text.lower() in answer:
@@ -87,7 +86,7 @@ def handle_solution_attempt(bot, update, redis):
         return Stage.ANSWER
 
 
-def handle_surrender(bot, update, redis):
+def handle_surrend(bot, update, redis):
     user_id = update.message.from_user.id
     question = redis.get(user_id)
     logger.info(question)
@@ -127,7 +126,7 @@ def main():
             ],
             Stage.ANSWER: [
                 RegexHandler("^(Сдаться)$",
-                    partial(handle_surrender, redis=redis_db)),
+                    partial(handle_surrend, redis=redis_db)),
                 RegexHandler("^(Новый вопрос)$",
                     partial(handle_new_question_request, redis=redis_db)),
                 MessageHandler(Filters.text, 
