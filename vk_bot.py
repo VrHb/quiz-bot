@@ -89,7 +89,19 @@ if __name__ == "__main__":
         level=logging.INFO
     )
     load_dotenv()
-    quiz = get_questions_and_answers_from_file("120br2.txt")
+    parser = argparse.ArgumentParser(description="Бот для проведения викторины.")
+    parser.add_argument(
+        "--path",
+        default="./quiz_questions",
+        help="Путь к директории с квизами"
+    )
+    parser.add_argument(
+        "--filename",
+        default="120bк2.txt",
+        help="Имя файла"
+    )
+    args = parser.parse_args()
+    quiz = get_questions_and_answers_from_file(args.path, args.filename)
     redis_db = redis.Redis(
         host=os.getenv("REDIS_DB"),
         port=os.getenv("REDIS_PORT"),

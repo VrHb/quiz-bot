@@ -1,10 +1,10 @@
 import os
 
 
-def get_questions_and_answers_from_file(file_name):
+def get_questions_and_answers_from_file(path, file_name):
     quiz = {}
     with open(
-        os.path.join("./quiz-questions", file_name),
+        os.path.join(path, file_name),
         encoding="KOI8-R"
         ) as file:
         text = file.read()

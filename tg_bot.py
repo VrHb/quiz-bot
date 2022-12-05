@@ -1,3 +1,4 @@
+import argparse
 from enum import IntEnum
 import random
 import os
@@ -10,6 +11,8 @@ import redis
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     ConversationHandler, RegexHandler
+
+from get_quiz import get_questions_and_answers_from_file
 
 
 logger = logging.getLogger("quizbot")
@@ -47,9 +50,8 @@ def start_quiz(bot, update):
     return Stage.QUESTION
 
 
-def handle_new_question_request(bot, update, redis):
+def handle_new_question_request(bot, update, redis, quiz):
     user_id = update.message.from_user.id
-    quiz = get_questions_and_answers_from_file("120br2.txt")
     question = random.choice(list(quiz.keys()))
     bot.send_message(
         chat_id=user_id,
@@ -61,8 +63,7 @@ def handle_new_question_request(bot, update, redis):
     return Stage.ANSWER
 
 
-def handle_solution_attempt(bot, update, redis):
-    quiz = get_questions_and_answers_from_file("120br2.txt")
+def handle_solution_attempt(bot, update, redis, quiz):
     user_id = update.message.from_user.id
     question = redis.get(user_id)
     logger.info(question)
@@ -86,11 +87,10 @@ def handle_solution_attempt(bot, update, redis):
         return Stage.ANSWER
 
 
-def handle_surrend(bot, update, redis):
+def handle_surrend(bot, update, redis, quiz):
     user_id = update.message.from_user.id
     question = redis.get(user_id)
     logger.info(question)
-    quiz = get_questions_and_answers_from_file("120br2.txt")
     answer = quiz[question] 
     bot.send_message(
         chat_id=user_id,
@@ -108,6 +108,19 @@ def handle_surrend(bot, update, redis):
 
 def main():
     load_dotenv()
+    parser = argparse.ArgumentParser(description="Бот для проведения викторины.")
+    parser.add_argument(
+        "--path",
+        default="./quiz_questions",
+        help="Путь к директории с квизами"
+    )
+    parser.add_argument(
+        "--filename",
+        default="120bк2.txt",
+        help="Имя файла"
+    )
+    args = parser.parse_args()
+    quiz = get_questions_and_answers_from_file(args.path, args.filename)
     redis_db = redis.Redis(
         host=os.getenv("REDIS_DB"),
         port=os.getenv("REDIS_PORT"),
@@ -122,15 +135,15 @@ def main():
         states={
             Stage.QUESTION: [
                 RegexHandler("^(Новый вопрос)$",
-                    partial(handle_new_question_request, redis=redis_db))
+                    partial(handle_new_question_request, redis=redis_db, quiz=quiz))
             ],
             Stage.ANSWER: [
                 RegexHandler("^(Сдаться)$",
-                    partial(handle_surrend, redis=redis_db)),
+                    partial(handle_surrend, redis=redis_db, quiz=quiz)),
                 RegexHandler("^(Новый вопрос)$",
-                    partial(handle_new_question_request, redis=redis_db)),
+                    partial(handle_new_question_request, redis=redis_db, quiz=quiz)),
                 MessageHandler(Filters.text, 
-                    partial(handle_solution_attempt, redis=redis_db)),
+                    partial(handle_solution_attempt, redis=redis_db, quiz=quiz)),
             ],
 
         },
