@@ -93,6 +93,9 @@ def handle_surrend(bot, update, redis, quiz):
 
 def main():
     load_dotenv()
+    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO
+    )
     parser = argparse.ArgumentParser(description="Бот для проведения викторины.")
     parser.add_argument(
         "--path",
@@ -140,7 +143,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        level=logging.INFO
-    )
     main()
