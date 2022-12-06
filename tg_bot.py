@@ -21,11 +21,8 @@ class Stage(IntEnum):
     QUESTION = 1
     ANSWER = 2
 
-quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой счет"]]
-reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
 
-
-def start_quiz(bot, update):
+def start_quiz(bot, update, reply_markup):
     chat_id = update.message.from_user.id
     bot.send_message(
         chat_id=chat_id,
@@ -35,7 +32,7 @@ def start_quiz(bot, update):
     return Stage.QUESTION
 
 
-def handle_new_question_request(bot, update, redis, quiz):
+def handle_new_question_request(bot, update, redis, quiz, reply_markup):
     user_id = update.message.from_user.id
     question = random.choice(list(quiz.keys()))
     bot.send_message(
@@ -48,7 +45,7 @@ def handle_new_question_request(bot, update, redis, quiz):
     return Stage.ANSWER
 
 
-def handle_solution_attempt(bot, update, redis, quiz):
+def handle_solution_attempt(bot, update, redis, quiz, reply_markup):
     user_id = update.message.from_user.id
     question = redis.get(user_id)
     logger.info(question)
@@ -108,6 +105,8 @@ def main():
         help="Имя файла"
     )
     args = parser.parse_args()
+    quiz_keyboard = [["Новый вопрос", "Сдаться"], ["Мой счет"]]
+    reply_markup = ReplyKeyboardMarkup(quiz_keyboard)
     quiz = get_questions_and_answers_from_file(args.path, args.filename)
     redis_db = redis.Redis(
         host=os.getenv("REDIS_DB"),
@@ -118,20 +117,41 @@ def main():
     updater = Updater(os.getenv("TG_BOT_TOKEN"))
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start_quiz)],
+        entry_points=[CommandHandler("start", 
+            partial(start_quiz, reply_markup=reply_markup))
+        ],
 
         states={
             Stage.QUESTION: [
                 RegexHandler("^(Новый вопрос)$",
-                    partial(handle_new_question_request, redis=redis_db, quiz=quiz))
+                    partial(
+                        handle_new_question_request,
+                        redis=redis_db,
+                        quiz=quiz,
+                        reply_markup=reply_markup
+                    ))
             ],
             Stage.ANSWER: [
                 RegexHandler("^(Сдаться)$",
-                    partial(handle_surrend, redis=redis_db, quiz=quiz)),
+                    partial(
+                        handle_surrend,
+                        redis=redis_db,
+                        quiz=quiz,
+                    )),
                 RegexHandler("^(Новый вопрос)$",
-                    partial(handle_new_question_request, redis=redis_db, quiz=quiz)),
+                    partial(
+                        handle_new_question_request,
+                        redis=redis_db,
+                        quiz=quiz,
+                        reply_markup=reply_markup
+                    )),
                 MessageHandler(Filters.text, 
-                    partial(handle_solution_attempt, redis=redis_db, quiz=quiz)),
+                    partial(
+                        handle_solution_attempt,
+                        redis=redis_db,
+                        quiz=quiz,
+                        reply_markup=reply_markup
+                    )),
             ],
 
         },
